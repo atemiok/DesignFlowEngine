@@ -25,16 +25,17 @@ export function formatDate(dateString: string): string {
   });
 }
 
-// Format currency
+// Format currency in KES (Kenyan Shillings)
 export function formatCurrency(amount: number | string): string {
   if (typeof amount === 'string') {
     amount = parseFloat(amount);
   }
   
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-KE', {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
+    currency: 'KES',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount);
 }
 

@@ -56,9 +56,9 @@ export default function Sidebar({ isOpen }: SidebarProps) {
             {sidebarLinks.map((link) => (
               <li key={link.href}>
                 <Link href={link.href}>
-                  <a
+                  <div
                     className={cn(
-                      "flex items-center px-4 py-2 text-sm font-medium",
+                      "flex items-center px-4 py-2 text-sm font-medium cursor-pointer",
                       location === link.href
                         ? "text-primary bg-primary-light/10 border-l-3 border-primary"
                         : "text-neutral-500 hover:bg-neutral-100"
@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                   >
                     {link.icon}
                     <span>{link.label}</span>
-                  </a>
+                  </div>
                 </Link>
               </li>
             ))}

@@ -162,7 +162,7 @@ export default function Calendar() {
                         <div className="text-sm text-neutral-500">{appointment.treatment}</div>
                       </div>
                       <Link href={`/patients/${appointment.patientId}`}>
-                        <a className="text-sm text-primary hover:underline">View</a>
+                        <div className="text-sm text-primary hover:underline cursor-pointer">View</div>
                       </Link>
                     </div>
                   </div>

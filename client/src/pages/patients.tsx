@@ -30,9 +30,9 @@ import {
 import PatientForm from "@/components/patients/PatientForm";
 
 export default function Patients() {
-  const [location, setLocation] = useLocation();
+  const [location, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const showNewPatientForm = location.includes("?new=true");
+  const [showNewPatientForm, setShowNewPatientForm] = useState(false);
   
   const { data: patients, isLoading } = useQuery<Patient[]>({
     queryKey: [searchQuery ? `/api/patients?q=${searchQuery}` : '/api/patients'],
@@ -51,7 +51,7 @@ export default function Patients() {
   };
   
   const handleCloseForm = () => {
-    setLocation("/patients");
+    setShowNewPatientForm(false);
   };
   
   return (
@@ -59,12 +59,16 @@ export default function Patients() {
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
         <h2 className="text-xl font-semibold text-neutral-500 mb-4 md:mb-0">Patients</h2>
         {!showNewPatientForm && (
-          <Link href="/patients?new=true">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              New Patient
-            </Button>
-          </Link>
+          <Button 
+            size="sm" 
+            onClick={() => {
+              console.log("New Patient button clicked");
+              setShowNewPatientForm(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            New Patient
+          </Button>
         )}
       </div>
       

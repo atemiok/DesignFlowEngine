@@ -13,6 +13,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,11 +30,16 @@ import { useLocation } from "wouter";
 // Combine patient and medical history schemas for the form
 const patientFormSchema = z.object({
   name: insertPatientSchema.shape.name,
+  idNumber: z.string().min(1, "ID number is required"),
+  gender: z.string().min(1, "Gender is required"),
   dob: insertPatientSchema.shape.dob,
-  phone: insertPatientSchema.shape.phone,
+  phone: z.string()
+    .min(10, "Phone number must be at least 10 characters")
+    .regex(/^(\+254|0)[17]\d{8}$/, "Must be a valid Kenyan phone number (e.g., +254712345678 or 0712345678)"),
   email: insertPatientSchema.shape.email.email("Invalid email address"),
   address: insertPatientSchema.shape.address,
   insurance: insertPatientSchema.shape.insurance.optional(),
+  serviceType: z.string().min(1, "Service type is required"),
   allergies: insertMedicalHistorySchema.shape.allergies.optional(),
   conditions: insertMedicalHistorySchema.shape.conditions.optional(),
   medications: insertMedicalHistorySchema.shape.medications.optional(),
@@ -203,12 +215,42 @@ export default function PatientForm({
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input placeholder="Jane Wambui" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="idNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ID Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="35614782" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gender</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Male, Female, or Other" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -218,7 +260,7 @@ export default function PatientForm({
                       <FormItem>
                         <FormLabel>Date of Birth</FormLabel>
                         <FormControl>
-                          <Input placeholder="MM/DD/YYYY" {...field} />
+                          <Input type="date" placeholder="DD/MM/YYYY" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -232,7 +274,7 @@ export default function PatientForm({
                       <FormItem>
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="(555) 123-4567" {...field} />
+                          <Input placeholder="0712345678 or +254712345678" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -261,26 +303,42 @@ export default function PatientForm({
                     <FormItem>
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="123 Main St, Anytown, ST 12345" {...field} />
+                        <Input placeholder="Estate, Street, City, County" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                <FormField
-                  control={form.control}
-                  name="insurance"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Insurance (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Insurance Provider" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="insurance"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Insurance (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="NHIF, AAR, Jubilee, etc." {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="serviceType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Service Type</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Checkup, Cleaning, Whitening, etc." {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </TabsContent>
               
               <TabsContent value="medical" className="space-y-4 pt-4">

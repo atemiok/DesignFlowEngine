@@ -104,12 +104,15 @@ export default function Appointments() {
         </div>
         
         {!showNewForm && !isEdit && (
-          <Link href="/appointments?new=true">
-            <Button size="sm">
+          <div>
+            <Button 
+              size="sm" 
+              onClick={() => setLocation("/appointments?new=true")}
+            >
               <Plus className="h-4 w-4 mr-1" />
               New Appointment
             </Button>
-          </Link>
+          </div>
         )}
       </div>
       

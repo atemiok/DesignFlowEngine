@@ -18,18 +18,15 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDate } from "@/lib/utils";
 
 export default function Appointments() {
-  const [location, setLocation] = useLocation();
+  // Local state to track if form should be shown
+  const [showForm, setShowForm] = useState(false);
+  const [location, navigate] = useLocation();
   
   // Parse URL query parameters
   const params = new URLSearchParams(location.split('?')[1] || '');
-  const showNewForm = params.has('new') || params.has('patientId');
   const editId = params.get('id');
   const isEdit = editId && params.get('edit') === 'true';
   const patientId = params.get('patientId');
-  
-  // For debugging
-  console.log("Location:", location);
-  console.log("ShowNewForm:", showNewForm);
   
   const today = new Date().toISOString().split('T')[0];
   
@@ -70,7 +67,8 @@ export default function Appointments() {
   };
   
   const handleCloseForm = () => {
-    setLocation("/appointments");
+    setShowForm(false);
+    navigate("/appointments");
   };
   
   const getStatusBadge = (status: string) => {
@@ -96,24 +94,24 @@ export default function Appointments() {
     <>
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
         <div className="flex items-center">
-          {(showNewForm || isEdit) && (
+          {(showForm || isEdit) && (
             <Button variant="ghost" size="sm" onClick={handleCloseForm}>
               <ChevronLeft className="h-4 w-4 mr-1" />
               Back to Appointments
             </Button>
           )}
-          {!showNewForm && !isEdit && (
+          {!showForm && !isEdit && (
             <h2 className="text-xl font-semibold text-neutral-500">Appointments</h2>
           )}
         </div>
         
-        {!showNewForm && !isEdit && (
+        {!showForm && !isEdit && (
           <div>
             <Button 
               size="sm" 
               onClick={() => {
                 console.log("New Appointment button clicked");
-                setLocation("/appointments?new=true");
+                setShowForm(true);
               }}
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -123,7 +121,7 @@ export default function Appointments() {
         )}
       </div>
       
-      {showNewForm ? (
+      {(showForm || isEdit) ? (
         <AppointmentForm 
           onSuccess={handleCloseForm} 
           defaultValues={patientId ? { patientId: patientId || "", doctorId: "1" } : undefined}

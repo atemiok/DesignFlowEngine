@@ -234,7 +234,7 @@ export class MemStorage implements IStorage {
     await this.createPayment({
       patientId: patient1.id,
       treatmentId: 1,
-      amount: 120,
+      amount: '120',
       date: '2023-03-15',
       method: 'credit',
       status: 'completed',
@@ -244,7 +244,7 @@ export class MemStorage implements IStorage {
     await this.createPayment({
       patientId: patient2.id,
       treatmentId: 2,
-      amount: 200,
+      amount: '200',
       date: '2023-01-22',
       method: 'insurance',
       status: 'completed',

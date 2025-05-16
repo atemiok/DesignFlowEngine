@@ -14,11 +14,14 @@ export const patients = pgTable("patients", {
   id: serial("id").primaryKey(),
   patientId: text("patient_id").notNull().unique(),
   name: text("name").notNull(),
+  idNumber: text("id_number").notNull(),
+  gender: text("gender").notNull(),
   dob: text("dob").notNull(),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
   address: text("address").notNull(),
   insurance: text("insurance"),
+  serviceType: text("service_type"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -83,11 +86,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertPatientSchema = createInsertSchema(patients).pick({
   name: true,
+  idNumber: true,
+  gender: true,
   dob: true,
   phone: true,
   email: true,
   address: true,
   insurance: true,
+  serviceType: true,
 });
 
 export const insertMedicalHistorySchema = createInsertSchema(medicalHistory).pick({

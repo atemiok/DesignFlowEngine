@@ -349,7 +349,7 @@ export default function PatientForm({
                     <FormItem>
                       <FormLabel>Allergies</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Penicillin, Latex" {...field} />
+                        <Input placeholder="e.g., Penicillin, Latex" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -363,7 +363,7 @@ export default function PatientForm({
                     <FormItem>
                       <FormLabel>Medical Conditions</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Hypertension, Diabetes" {...field} />
+                        <Input placeholder="e.g., Hypertension, Diabetes" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -377,7 +377,7 @@ export default function PatientForm({
                     <FormItem>
                       <FormLabel>Current Medications</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Lisinopril, Metformin" {...field} />
+                        <Input placeholder="e.g., Lisinopril, Metformin" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -394,7 +394,8 @@ export default function PatientForm({
                         <Textarea 
                           placeholder="Any other important medical information" 
                           className="min-h-[100px]" 
-                          {...field} 
+                          {...field}
+                          value={field.value || ""} 
                         />
                       </FormControl>
                       <FormMessage />

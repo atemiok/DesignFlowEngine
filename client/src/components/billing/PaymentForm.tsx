@@ -60,6 +60,8 @@ export default function PaymentForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+
+  
   const { data: patients } = useQuery({
     queryKey: ['/api/patients'],
   });
@@ -74,15 +76,14 @@ export default function PaymentForm({
   
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentFormSchema),
-    defaultValues: {
+    defaultValues: preparedDefaultValues || {
       patientId: "",
       treatmentId: "",
       amount: "",
       date: new Date().toISOString().split('T')[0],
-      method: "",
+      method: "mpesa", // Default to M-Pesa as common in Kenya
       status: "completed",
       notes: "",
-      ...preparedDefaultValues,
     },
   });
   
@@ -177,13 +178,13 @@ export default function PaymentForm({
   };
   
   const paymentMethods = [
+    "mpesa",
     "cash",
-    "credit",
-    "debit",
     "insurance",
-    "check",
     "bank transfer",
-    "online payment",
+    "credit card",
+    "nhif",
+    "corporate"
   ];
   
   const statusOptions = [
@@ -265,7 +266,7 @@ export default function PaymentForm({
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount ($)</FormLabel>
+                    <FormLabel>Amount (KES)</FormLabel>
                     <FormControl>
                       <Input type="text" placeholder="0.00" {...field} />
                     </FormControl>

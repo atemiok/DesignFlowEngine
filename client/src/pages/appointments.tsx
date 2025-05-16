@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
-import { Appointment } from "@shared/schema";
+import { Appointment, Patient } from "@shared/schema";
 import { Plus, ChevronLeft } from "lucide-react";
 import AppointmentForm from "@/components/appointments/AppointmentForm";
 import Calendar from "@/components/appointments/Calendar";
@@ -21,11 +21,15 @@ export default function Appointments() {
   const [location, setLocation] = useLocation();
   
   // Parse URL query parameters
-  const params = new URLSearchParams(location.split('?')[1]);
+  const params = new URLSearchParams(location.split('?')[1] || '');
   const showNewForm = params.has('new') || params.has('patientId');
   const editId = params.get('id');
   const isEdit = editId && params.get('edit') === 'true';
   const patientId = params.get('patientId');
+  
+  // For debugging
+  console.log("Location:", location);
+  console.log("ShowNewForm:", showNewForm);
   
   const today = new Date().toISOString().split('T')[0];
   
@@ -33,11 +37,11 @@ export default function Appointments() {
     queryKey: ['/api/appointments'],
   });
   
-  const { data: patients } = useQuery({
+  const { data: patients } = useQuery<Patient[]>({
     queryKey: ['/api/patients'],
   });
   
-  const { data: appointmentToEdit } = useQuery({
+  const { data: appointmentToEdit } = useQuery<Appointment>({
     queryKey: [`/api/appointments/${editId}`],
     enabled: !!isEdit && !!editId,
   });
@@ -52,7 +56,7 @@ export default function Appointments() {
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) || [];
   
   const getPatientName = (patientId: number): string => {
-    const patient = patients?.find((p) => p.id === patientId);
+    const patient = patients?.find((p: Patient) => p.id === patientId);
     return patient?.name || "Unknown Patient";
   };
   
@@ -107,7 +111,10 @@ export default function Appointments() {
           <div>
             <Button 
               size="sm" 
-              onClick={() => setLocation("/appointments?new=true")}
+              onClick={() => {
+                console.log("New Appointment button clicked");
+                setLocation("/appointments?new=true");
+              }}
             >
               <Plus className="h-4 w-4 mr-1" />
               New Appointment
@@ -119,7 +126,7 @@ export default function Appointments() {
       {showNewForm ? (
         <AppointmentForm 
           onSuccess={handleCloseForm} 
-          defaultValues={patientId ? { patientId, doctorId: "1" } : undefined}
+          defaultValues={patientId ? { patientId: patientId || "", doctorId: "1" } : undefined}
         />
       ) : isEdit && appointmentToEdit ? (
         <AppointmentForm 
@@ -133,7 +140,7 @@ export default function Appointments() {
             time: appointmentToEdit.time,
             treatment: appointmentToEdit.treatment,
             status: appointmentToEdit.status,
-            notes: appointmentToEdit.notes,
+            notes: appointmentToEdit.notes || "",
           }}
         />
       ) : (

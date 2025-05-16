@@ -13,7 +13,9 @@ import Billing from "@/pages/billing";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
+import LoginPage from "@/pages/login";
 import { ThemeProvider } from "next-themes";
+import { useEffect, useState } from "react";
 
 function Router() {
   return (
@@ -34,12 +36,32 @@ function Router() {
 }
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    setIsAuthenticated(Boolean(user));
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class">
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <Switch>
+            <Route path="/login" component={LoginPage} />
+            {isAuthenticated ? <Router /> : <Route component={LoginPage} />}
+          </Switch>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>

@@ -7,6 +7,8 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
   role: text("role").notNull().default("staff"),
 });
 
@@ -14,15 +16,16 @@ export const patients = pgTable("patients", {
   id: serial("id").primaryKey(),
   patientId: text("patient_id").notNull().unique(),
   name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  address: text("address").notNull(),
   idNumber: text("id_number").notNull(),
   gender: text("gender").notNull(),
   dob: text("dob").notNull(),
-  phone: text("phone").notNull(),
   email: text("email").notNull(),
-  address: text("address").notNull(),
   insurance: text("insurance"),
-  serviceType: text("service_type"),
-  createdAt: timestamp("created_at").defaultNow(),
+  service: text("service").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const medicalHistory = pgTable("medical_history", {
@@ -67,11 +70,13 @@ export const dentalChart = pgTable("dental_chart", {
 
 export const payments = pgTable("payments", {
   id: serial("id").primaryKey(),
-  patientId: integer("patient_id").notNull().references(() => patients.id),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
   treatmentId: integer("treatment_id").references(() => treatments.id),
   amount: numeric("amount").notNull(),
+  paymentMethod: text("payment_method").notNull(),
   date: text("date").notNull(),
-  method: text("method").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
   status: text("status").notNull(),
   notes: text("notes"),
 });
@@ -81,6 +86,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   name: true,
+  email: true,
+  phone: true,
   role: true,
 });
 
@@ -93,7 +100,7 @@ export const insertPatientSchema = createInsertSchema(patients).pick({
   email: true,
   address: true,
   insurance: true,
-  serviceType: true,
+  service: true,
 });
 
 export const insertMedicalHistorySchema = createInsertSchema(medicalHistory).pick({
@@ -136,7 +143,7 @@ export const insertPaymentSchema = createInsertSchema(payments).pick({
   treatmentId: true,
   amount: true,
   date: true,
-  method: true,
+  paymentMethod: true,
   status: true,
   notes: true,
 });

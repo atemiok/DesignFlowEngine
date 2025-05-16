@@ -94,49 +94,60 @@ export class MemStorage implements IStorage {
     this.dentalChartId = 1;
     this.paymentId = 1;
     
-    // Add initial doctor user
+    // Add initial doctor user with hashed password
     this.createUser({
       username: 'doctor',
-      password: 'password',
+      password: '$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX5YxX', // hashed 'password'
       name: 'Dr. Roberts',
+      email: 'dr.roberts@dentalcare.com',
+      phone: '+254712345678',
       role: 'doctor'
     });
     
     // Add initial data for demonstration
-    this.initializeData();
+    this.initializeData().catch(console.error);
   }
   
-  private initializeData() {
+  private async initializeData() {
     // Create sample patients
-    const patient1 = this.createPatient({
+    const patient1 = await this.createPatient({
       name: 'Jane Doe',
+      idNumber: '12345678',
+      gender: 'Female',
       dob: '05/12/1985',
-      phone: '(555) 123-4567',
+      phone: '+254712345678',
       email: 'jane.doe@example.com',
       address: '123 Main St, Anytown',
-      insurance: 'DentalCare Plus'
+      insurance: 'DentalCare Plus',
+      service: 'checkup'
     });
     
-    const patient2 = this.createPatient({
+    const patient2 = await this.createPatient({
       name: 'Mike Smith',
+      idNumber: '87654321',
+      gender: 'Male',
       dob: '10/24/1978',
-      phone: '(555) 987-6543',
+      phone: '+254798765432',
       email: 'mike.smith@example.com',
       address: '456 Oak Ave, Somecity',
-      insurance: 'Dental Shield'
+      insurance: 'Dental Shield',
+      service: 'cleaning'
     });
     
-    const patient3 = this.createPatient({
+    const patient3 = await this.createPatient({
       name: 'Alice Johnson',
+      idNumber: '24681357',
+      gender: 'Female',
       dob: '03/15/1990',
-      phone: '(555) 555-5555',
+      phone: '+254755555555',
       email: 'alice.johnson@example.com',
       address: '789 Pine Rd, Othertown',
-      insurance: 'DentiHealth'
+      insurance: 'DentiHealth',
+      service: 'whitening'
     });
     
     // Create medical histories
-    this.createMedicalHistory({
+    await this.createMedicalHistory({
       patientId: patient1.id,
       allergies: 'Penicillin',
       conditions: 'Hypertension',
@@ -147,7 +158,7 @@ export class MemStorage implements IStorage {
     // Create appointments
     const today = new Date().toISOString().split('T')[0];
     
-    this.createAppointment({
+    await this.createAppointment({
       patientId: patient1.id,
       doctorId: 1, // Dr. Roberts
       date: today,
@@ -157,7 +168,7 @@ export class MemStorage implements IStorage {
       notes: 'Regular cleaning appointment'
     });
     
-    this.createAppointment({
+    await this.createAppointment({
       patientId: patient2.id,
       doctorId: 1,
       date: today,
@@ -167,7 +178,7 @@ export class MemStorage implements IStorage {
       notes: 'Patient experiencing pain'
     });
     
-    this.createAppointment({
+    await this.createAppointment({
       patientId: patient3.id,
       doctorId: 1,
       date: today,
@@ -178,41 +189,41 @@ export class MemStorage implements IStorage {
     });
     
     // Create treatments
-    this.createTreatment({
+    await this.createTreatment({
       patientId: patient1.id,
       doctorId: 1,
       date: '2023-03-15',
       treatmentType: 'Dental Cleaning',
       notes: 'Routine cleaning and fluoride treatment.',
-      cost: 120
+      cost: '120'
     });
     
-    this.createTreatment({
+    await this.createTreatment({
       patientId: patient2.id,
       doctorId: 1,
       date: '2023-01-22',
       treatmentType: 'Cavity Filling',
       tooth: '18',
       notes: 'Composite filling on tooth #18.',
-      cost: 200
+      cost: '200'
     });
     
     // Create dental chart entries
-    this.createDentalChartEntry({
+    await this.createDentalChartEntry({
       patientId: patient1.id,
       toothNumber: '1',
       status: 'needs-treatment',
       notes: 'Wisdom tooth extraction recommended.'
     });
     
-    this.createDentalChartEntry({
+    await this.createDentalChartEntry({
       patientId: patient1.id,
       toothNumber: '14',
       status: 'treatment-scheduled',
       notes: 'Root canal treatment scheduled for Apr 10.'
     });
     
-    this.createDentalChartEntry({
+    await this.createDentalChartEntry({
       patientId: patient1.id,
       toothNumber: '18',
       status: 'treated',
@@ -220,7 +231,7 @@ export class MemStorage implements IStorage {
     });
     
     // Create payments
-    this.createPayment({
+    await this.createPayment({
       patientId: patient1.id,
       treatmentId: 1,
       amount: 120,
@@ -230,7 +241,7 @@ export class MemStorage implements IStorage {
       notes: 'Payment for dental cleaning'
     });
     
-    this.createPayment({
+    await this.createPayment({
       patientId: patient2.id,
       treatmentId: 2,
       amount: 200,

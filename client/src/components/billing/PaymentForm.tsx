@@ -35,8 +35,8 @@ const paymentFormSchema = z.object({
     (val) => !isNaN(Number(val)) && Number(val) >= 0,
     { message: "Amount must be a valid positive number" }
   ),
-  date: z.string().min(1, "Date is required"),
-  method: z.string().min(1, "Payment method is required"),
+  date: z.string().min(8, "Date is required").regex(/^\d{2}\d{2}\d{4}$/, "Date must be in ddmmyyyy format"),
+  paymentMethod: z.enum(["mpesa", "cash", "insurance"], { message: "Payment method must be mpesa, cash, or insurance" }),
   status: z.string().min(1, "Status is required"),
   notes: z.string().optional(),
 });
@@ -250,7 +250,7 @@ export default function PaymentForm({
                       <SelectItem value="">None (General Payment)</SelectItem>
                       {treatments?.map((treatment) => (
                         <SelectItem key={treatment.id} value={treatment.id.toString()}>
-                          {treatment.treatmentType} - {treatment.date} (${treatment.cost})
+                          {treatment.treatmentType} - {treatment.date} (KES {treatment.cost})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -293,27 +293,22 @@ export default function PaymentForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="method"
+                name="paymentMethod"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Method</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Payment Method" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {paymentMethods.map((method) => (
-                          <SelectItem key={method} value={method}>
-                            {method.charAt(0).toUpperCase() + method.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        <SelectContent>
+                          <SelectItem value="mpesa">Mpesa</SelectItem>
+                          <SelectItem value="cash">Cash</SelectItem>
+                          <SelectItem value="insurance">Insurance</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

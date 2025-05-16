@@ -30,7 +30,7 @@ import { useLocation } from "wouter";
 const treatmentFormSchema = z.object({
   patientId: z.string().min(1, "Patient is required"),
   doctorId: z.string().min(1, "Doctor is required"),
-  date: z.string().min(1, "Date is required"),
+  date: z.string().min(8, "Date is required").regex(/^\d{2}\d{2}\d{4}$/, "Date must be in ddmmyyyy format"),
   treatmentType: z.string().min(1, "Treatment type is required"),
   tooth: z.string().optional(),
   notes: z.string().optional(),
@@ -292,23 +292,19 @@ export default function TreatmentForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Treatment Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Treatment Type" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {treatmentOptions.map((treatment) => (
-                          <SelectItem key={treatment} value={treatment}>
-                            {treatment}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                        <SelectContent>
+                          <SelectItem value="checkup">Checkup</SelectItem>
+                          <SelectItem value="whitening">Whitening</SelectItem>
+                          <SelectItem value="missing_tooth">Missing Tooth</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

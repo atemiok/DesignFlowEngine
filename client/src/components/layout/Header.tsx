@@ -10,6 +10,7 @@ interface HeaderProps {
 
 export default function Header({ toggleSidebar }: HeaderProps) {
   const [location] = useLocation();
+  const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || 'null') : null;
   
   // Extract title from location
   const getTitle = () => {
@@ -42,12 +43,14 @@ export default function Header({ toggleSidebar }: HeaderProps) {
               <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
             </Button>
           </div>
-          <div className="flex items-center space-x-2">
-            <Avatar className="w-8 h-8 bg-primary">
-              <AvatarFallback className="text-white text-sm font-medium">DR</AvatarFallback>
-            </Avatar>
-            <span className="text-sm font-medium text-neutral-500 hidden md:inline-block">Dr. Roberts</span>
-          </div>
+          {user && (
+            <div className="flex items-center space-x-2">
+              <Avatar className="w-8 h-8 bg-primary">
+                <AvatarFallback className="text-white text-sm font-medium">{user.name ? user.name.slice(0,2).toUpperCase() : 'DR'}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium text-neutral-500 hidden md:inline-block">{user.name || 'User'}</span>
+            </div>
+          )}
         </div>
       </div>
     </header>

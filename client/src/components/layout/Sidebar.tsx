@@ -15,13 +15,15 @@ import {
   Settings,
   LogOut,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface SidebarProps {
   isOpen: boolean;
 }
 
 export default function Sidebar({ isOpen }: SidebarProps) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const { toast } = useToast();
   
   const sidebarLinks = [
     { href: "/", icon: <LayoutDashboard className="h-4 w-4 mr-3" />, label: "Dashboard" },
@@ -32,6 +34,16 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     { href: "/reports", icon: <BarChart2 className="h-4 w-4 mr-3" />, label: "Reports" },
     { href: "/settings", icon: <Settings className="h-4 w-4 mr-3" />, label: "Settings" },
   ];
+  
+  const handleLogout = () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    localStorage.removeItem("user");
+    toast({
+      title: "Logged out",
+      description: `Goodbye, ${user.name || "User"}!`,
+    });
+    navigate("/login");
+  };
   
   return (
     <aside 
@@ -87,7 +99,11 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           </div>
         </div>
         <div className="px-4 py-2 border-t border-neutral-200">
-          <Button variant="ghost" className="w-full justify-start text-neutral-500 px-3">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-neutral-500 px-3" 
+            onClick={handleLogout}
+          >
             <LogOut className="h-4 w-4 mr-3" />
             <span className="text-sm font-medium">Logout</span>
           </Button>

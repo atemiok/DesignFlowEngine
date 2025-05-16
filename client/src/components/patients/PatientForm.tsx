@@ -32,14 +32,14 @@ const patientFormSchema = z.object({
   name: insertPatientSchema.shape.name,
   idNumber: z.string().min(1, "ID number is required"),
   gender: z.string().min(1, "Gender is required"),
-  dob: insertPatientSchema.shape.dob,
+  dob: z.string().min(8, "Date of birth is required").regex(/^\d{2}\d{2}\d{4}$/, "Date must be in ddmmyyyy format"),
   phone: z.string()
     .min(10, "Phone number must be at least 10 characters")
-    .regex(/^(\+254|0)[17]\d{8}$/, "Must be a valid Kenyan phone number (e.g., +254712345678 or 0712345678)"),
+    .regex(/^\+254[17]\d{8}$/, "Must be a valid Kenyan phone number (e.g., +254712345678)"),
   email: insertPatientSchema.shape.email.email("Invalid email address"),
-  address: insertPatientSchema.shape.address,
+  address: z.string().min(1, "Address is required"),
   insurance: insertPatientSchema.shape.insurance.optional(),
-  serviceType: z.string().min(1, "Service type is required"),
+  service: z.string().min(1, "Service is required"),
   allergies: insertMedicalHistorySchema.shape.allergies.optional(),
   conditions: insertMedicalHistorySchema.shape.conditions.optional(),
   medications: insertMedicalHistorySchema.shape.medications.optional(),
@@ -327,13 +327,29 @@ export default function PatientForm({
                   
                   <FormField
                     control={form.control}
-                    name="serviceType"
+                    name="service"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Service Type</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Checkup, Cleaning, Whitening, etc." {...field} value={field.value || ""} />
-                        </FormControl>
+                        <FormLabel>Service</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Service" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="checkup">Checkup</SelectItem>
+                            <SelectItem value="cleaning">Cleaning</SelectItem>
+                            <SelectItem value="whitening">Whitening</SelectItem>
+                            <SelectItem value="filling">Filling</SelectItem>
+                            <SelectItem value="extraction">Extraction</SelectItem>
+                            <SelectItem value="root-canal">Root Canal</SelectItem>
+                            <SelectItem value="crown">Crown</SelectItem>
+                            <SelectItem value="bridge">Bridge</SelectItem>
+                            <SelectItem value="implant">Implant</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -195,7 +195,8 @@ export class MemStorage implements IStorage {
       date: '2023-03-15',
       treatmentType: 'Dental Cleaning',
       notes: 'Routine cleaning and fluoride treatment.',
-      cost: '120'
+      cost: '120',
+      tooth: null
     });
     
     await this.createTreatment({
@@ -248,7 +249,7 @@ export class MemStorage implements IStorage {
       date: '2023-01-22',
       method: 'insurance',
       status: 'completed',
-      notes: 'Insurance covered 80%'
+      notes: 'Payment for cavity filling'
     });
   }
   
@@ -264,13 +265,16 @@ export class MemStorage implements IStorage {
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userId++;
     const user: User = {
-      ...insertUser,
-      id,
-      role: insertUser.role || 'patient' // Provide default role
+      id: this.userId++,
+      name: insertUser.name,
+      phone: insertUser.phone,
+      email: insertUser.email,
+      username: insertUser.username,
+      password: insertUser.password,
+      role: insertUser.role ?? "patient" // Provide default role
     };
-    this.users.set(id, user);
+    this.users.set(user.id, user);
     return user;
   }
   
@@ -285,16 +289,24 @@ export class MemStorage implements IStorage {
   
   async getPatientByPatientId(patientId: string): Promise<Patient | undefined> {
     return Array.from(this.patients.values()).find(
-      (patient) => patient.patientId === patientId
+      (patient) => patient.idNumber === patientId
     );
   }
   
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
-    const id = this.patientId++;
-    const patientId = `P-${new Date().getFullYear()}-${String(id).padStart(3, '0')}`;
-    const createdAt = new Date().toISOString();
-    const patient: Patient = { ...insertPatient, id, patientId, createdAt };
-    this.patients.set(id, patient);
+    const patient: Patient = {
+      id: this.patientId++,
+      name: insertPatient.name,
+      idNumber: insertPatient.idNumber,
+      gender: insertPatient.gender,
+      dob: insertPatient.dob,
+      phone: insertPatient.phone,
+      email: insertPatient.email,
+      address: insertPatient.address,
+      insurance: insertPatient.insurance,
+      service: insertPatient.service
+    };
+    this.patients.set(patient.id, patient);
     return patient;
   }
   
@@ -316,7 +328,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.patients.values()).filter(
       (patient) => 
         patient.name.toLowerCase().includes(lowercaseQuery) ||
-        patient.patientId.toLowerCase().includes(lowercaseQuery) ||
+        patient.idNumber.toLowerCase().includes(lowercaseQuery) ||
         patient.phone.includes(query) ||
         patient.email.toLowerCase().includes(lowercaseQuery)
     );
@@ -330,16 +342,15 @@ export class MemStorage implements IStorage {
   }
   
   async createMedicalHistory(insertMedicalHistory: InsertMedicalHistory): Promise<MedicalHistory> {
-    const id = this.medicalHistoryId++;
     const medicalHistory: MedicalHistory = {
-      id,
+      id: this.medicalHistoryId++,
       patientId: insertMedicalHistory.patientId,
       notes: insertMedicalHistory.notes ?? null,
       allergies: insertMedicalHistory.allergies ?? null,
       conditions: insertMedicalHistory.conditions ?? null,
       medications: insertMedicalHistory.medications ?? null
     };
-    this.medicalHistories.set(id, medicalHistory);
+    this.medicalHistories.set(medicalHistory.id, medicalHistory);
     return medicalHistory;
   }
   
@@ -374,18 +385,17 @@ export class MemStorage implements IStorage {
   }
   
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
-    const id = this.appointmentId++;
     const appointment: Appointment = {
-      id,
+      id: this.appointmentId++,
       patientId: insertAppointment.patientId,
       doctorId: insertAppointment.doctorId,
       date: insertAppointment.date,
       time: insertAppointment.time,
       treatment: insertAppointment.treatment,
-      status: insertAppointment.status || 'scheduled', // Provide default status
+      status: insertAppointment.status ?? "scheduled",
       notes: insertAppointment.notes ?? null
     };
-    this.appointments.set(id, appointment);
+    this.appointments.set(appointment.id, appointment);
     return appointment;
   }
   
@@ -418,9 +428,17 @@ export class MemStorage implements IStorage {
   }
   
   async createTreatment(insertTreatment: InsertTreatment): Promise<Treatment> {
-    const id = this.treatmentId++;
-    const treatment: Treatment = { ...insertTreatment, id };
-    this.treatments.set(id, treatment);
+    const treatment: Treatment = {
+      id: this.treatmentId++,
+      patientId: insertTreatment.patientId,
+      doctorId: insertTreatment.doctorId,
+      date: insertTreatment.date,
+      treatmentType: insertTreatment.treatmentType,
+      notes: insertTreatment.notes ?? null,
+      tooth: insertTreatment.tooth ?? null,
+      cost: insertTreatment.cost
+    };
+    this.treatments.set(treatment.id, treatment);
     return treatment;
   }
   
@@ -445,10 +463,15 @@ export class MemStorage implements IStorage {
   }
   
   async createDentalChartEntry(insertEntry: InsertDentalChart): Promise<DentalChart> {
-    const id = this.dentalChartId++;
-    const updatedAt = new Date().toISOString();
-    const entry: DentalChart = { ...insertEntry, id, updatedAt };
-    this.dentalCharts.set(id, entry);
+    const entry: DentalChart = {
+      id: this.dentalChartId++,
+      patientId: insertEntry.patientId,
+      toothNumber: insertEntry.toothNumber,
+      status: insertEntry.status,
+      notes: insertEntry.notes ?? null,
+      updatedAt: new Date()
+    };
+    this.dentalCharts.set(entry.id, entry);
     return entry;
   }
   
@@ -456,8 +479,11 @@ export class MemStorage implements IStorage {
     const entry = this.dentalCharts.get(id);
     if (!entry) return undefined;
     
-    const updatedAt = new Date().toISOString();
-    const updatedEntry = { ...entry, ...update, updatedAt };
+    const updatedEntry: DentalChart = {
+      ...entry,
+      ...update,
+      updatedAt: new Date()
+    };
     this.dentalCharts.set(id, updatedEntry);
     return updatedEntry;
   }
@@ -478,9 +504,20 @@ export class MemStorage implements IStorage {
   }
   
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
-    const id = this.paymentId++;
-    const payment: Payment = { ...insertPayment, id };
-    this.payments.set(id, payment);
+    const now = new Date();
+    const payment: Payment = {
+      id: this.paymentId++,
+      patientId: insertPayment.patientId,
+      treatmentId: insertPayment.treatmentId ?? null,
+      amount: insertPayment.amount,
+      date: insertPayment.date,
+      method: insertPayment.method,
+      status: insertPayment.status,
+      notes: insertPayment.notes ?? null,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.payments.set(payment.id, payment);
     return payment;
   }
   
@@ -488,7 +525,11 @@ export class MemStorage implements IStorage {
     const payment = this.payments.get(id);
     if (!payment) return undefined;
     
-    const updatedPayment = { ...payment, ...update };
+    const updatedPayment: Payment = {
+      ...payment,
+      ...update,
+      updatedAt: new Date()
+    };
     this.payments.set(id, updatedPayment);
     return updatedPayment;
   }

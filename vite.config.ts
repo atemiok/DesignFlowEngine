@@ -33,6 +33,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
+          'ui-vendor': ['@radix-ui/react-*']
         },
       },
     },

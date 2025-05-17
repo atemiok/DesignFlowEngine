@@ -32,7 +32,14 @@ yarn-error.log*
 # Vercel
 .vercel
 
+<<<<<<< HEAD
 # Build
 dist
 build
 *.tar.gz
+=======
+server/public
+vite.config.ts.*
+*.tar.gz
+.vercel
+>>>>>>> 0df61eb7dd1e3f7ad568f5f744321f39eb9e1e3d

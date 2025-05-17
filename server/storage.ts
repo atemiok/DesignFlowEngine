@@ -1,158 +1,3 @@
-<<<<<<< HEAD
-// Data storage arrays
-const users: User[] = [];
-const medicalRecords: MedicalRecord[] = [];
-const appointments: Appointment[] = [];
-const treatments: Treatment[] = [];
-const toothStatuses: ToothStatus[] = [];
-const payments: Payment[] = [];
-
-// Update the User interface
-interface User {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-  username: string;
-  password: string;
-  role: string;
-}
-
-// Update the MedicalRecord interface
-interface MedicalRecord {
-  id: number;
-  patientId: number;
-  notes: string | null;
-  allergies: string | null;
-  conditions: string | null;
-  medications: string | null;
-}
-
-// Update the Appointment interface
-interface Appointment {
-  id: number;
-  date: string;
-  patientId: number;
-  doctorId: number;
-  time: string;
-  treatment: string;
-  status: string;
-  notes: string | null;
-}
-
-// Update the Treatment interface
-interface Treatment {
-  id: number;
-  date: string;
-  patientId: number;
-  doctorId: number;
-  treatmentType: string;
-  cost: string;
-  notes: string | null;
-  tooth: string | null;
-}
-
-// Update the ToothStatus interface
-interface ToothStatus {
-  id: number;
-  patientId: number;
-  updatedAt: Date | null;
-  status: string;
-  notes: string | null;
-  toothNumber: string;
-}
-
-// Update the Payment interface
-interface Payment {
-  id: number;
-  date: string;
-  patientId: number;
-  createdAt: Date;
-  updatedAt: Date;
-  status: string;
-  notes: string | null;
-  treatmentId: number | null;
-  amount: string;
-  paymentMethod: string;
-}
-
-// Update the createUser function
-export function createUser(user: Omit<User, "id">): User {
-  const id = users.length + 1;
-  const newUser = { ...user, id, role: user.role || "patient" };
-  users.push(newUser);
-  return newUser;
-}
-
-// Update the createMedicalRecord function
-export function createMedicalRecord(record: Omit<MedicalRecord, "id">): MedicalRecord {
-  const id = medicalRecords.length + 1;
-  const newRecord = {
-    ...record,
-    id,
-    notes: record.notes || null,
-    allergies: record.allergies || null,
-    conditions: record.conditions || null,
-    medications: record.medications || null
-  };
-  medicalRecords.push(newRecord);
-  return newRecord;
-}
-
-// Update the createAppointment function
-export function createAppointment(appointment: Omit<Appointment, "id">): Appointment {
-  const id = appointments.length + 1;
-  const newAppointment = {
-    ...appointment,
-    id,
-    status: appointment.status || "scheduled",
-    notes: appointment.notes || null
-  };
-  appointments.push(newAppointment);
-  return newAppointment;
-}
-
-// Update the createTreatment function
-export function createTreatment(treatment: Omit<Treatment, "id">): Treatment {
-  const id = treatments.length + 1;
-  const newTreatment = {
-    ...treatment,
-    id,
-    notes: treatment.notes || null,
-    tooth: treatment.tooth || null
-  };
-  treatments.push(newTreatment);
-  return newTreatment;
-}
-
-// Update the createToothStatus function
-export function createToothStatus(status: Omit<ToothStatus, "id">): ToothStatus {
-  const id = toothStatuses.length + 1;
-  const newStatus = {
-    ...status,
-    id,
-    updatedAt: status.updatedAt ? new Date(status.updatedAt) : new Date()
-  };
-  toothStatuses.push(newStatus);
-  return newStatus;
-}
-
-// Update the createPayment function
-export function createPayment(payment: Omit<Payment, "id" | "createdAt" | "updatedAt">): Payment {
-  const id = payments.length + 1;
-  const now = new Date();
-  const newPayment = {
-    ...payment,
-    id,
-    createdAt: now,
-    updatedAt: now,
-    notes: payment.notes || null,
-    treatmentId: payment.treatmentId || null
-  };
-  payments.push(newPayment);
-  return newPayment;
-} 
-=======
 import { 
   users, type User, type InsertUser,
   patients, type Patient, type InsertPatient,
@@ -162,6 +7,7 @@ import {
   dentalChart, type DentalChart, type InsertDentalChart,
   payments, type Payment, type InsertPayment
 } from "@shared/schema";
+import bcryptjs from 'bcryptjs';
 
 // Storage interface
 export interface IStorage {
@@ -392,7 +238,7 @@ export class MemStorage implements IStorage {
       treatmentId: 1,
       amount: '120',
       date: '2023-03-15',
-      method: 'credit',
+      paymentMethod: 'credit',
       status: 'completed',
       notes: 'Payment for dental cleaning'
     });
@@ -402,7 +248,7 @@ export class MemStorage implements IStorage {
       treatmentId: 2,
       amount: '200',
       date: '2023-01-22',
-      method: 'insurance',
+      paymentMethod: 'insurance',
       status: 'completed',
       notes: 'Payment for cavity filling'
     });
@@ -419,16 +265,17 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(userData: InsertUser): Promise<User> {
+    const { password, ...userWithoutPassword } = userData;
+    const hashedPassword = await bcryptjs.hash(password, 10);
+    
     const user: User = {
       id: this.userId++,
-      name: insertUser.name,
-      phone: insertUser.phone,
-      email: insertUser.email,
-      username: insertUser.username,
-      password: insertUser.password,
-      role: insertUser.role ?? "patient" // Provide default role
+      ...userWithoutPassword,
+      password: hashedPassword,
+      role: userData.role || "staff", // Ensure role is always defined
     };
+    
     this.users.set(user.id, user);
     return user;
   }
@@ -449,17 +296,16 @@ export class MemStorage implements IStorage {
   }
   
   async createPatient(insertPatient: InsertPatient): Promise<Patient> {
+    const now = new Date();
     const patient: Patient = {
+      ...insertPatient,
       id: this.patientId++,
-      name: insertPatient.name,
-      idNumber: insertPatient.idNumber,
-      gender: insertPatient.gender,
-      dob: insertPatient.dob,
-      phone: insertPatient.phone,
-      email: insertPatient.email,
-      address: insertPatient.address,
-      insurance: insertPatient.insurance,
-      service: insertPatient.service
+      phone: String(insertPatient.phone),
+      idNumber: String(insertPatient.idNumber),
+      insurance: insertPatient.insurance ?? null,
+      patientId: (insertPatient as any).patientId ?? String(this.patientId),
+      updatedAt: now,
+      createdAt: now,
     };
     this.patients.set(patient.id, patient);
     return patient;
@@ -496,15 +342,16 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async createMedicalHistory(insertMedicalHistory: InsertMedicalHistory): Promise<MedicalHistory> {
-    const medicalHistory: MedicalHistory = {
+  async createMedicalHistory(medicalHistoryData: InsertMedicalHistory): Promise<MedicalHistory> {
+    const medicalHistory = {
       id: this.medicalHistoryId++,
-      patientId: insertMedicalHistory.patientId,
-      notes: insertMedicalHistory.notes ?? null,
-      allergies: insertMedicalHistory.allergies ?? null,
-      conditions: insertMedicalHistory.conditions ?? null,
-      medications: insertMedicalHistory.medications ?? null
+      patientId: medicalHistoryData.patientId,
+      allergies: medicalHistoryData.allergies || null,
+      conditions: medicalHistoryData.conditions || null,
+      medications: medicalHistoryData.medications || null,
+      notes: medicalHistoryData.notes || null,
     };
+    
     this.medicalHistories.set(medicalHistory.id, medicalHistory);
     return medicalHistory;
   }
@@ -539,17 +386,18 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
-    const appointment: Appointment = {
+  async createAppointment(appointmentData: InsertAppointment): Promise<Appointment> {
+    const appointment = {
       id: this.appointmentId++,
-      patientId: insertAppointment.patientId,
-      doctorId: insertAppointment.doctorId,
-      date: insertAppointment.date,
-      time: insertAppointment.time,
-      treatment: insertAppointment.treatment,
-      status: insertAppointment.status ?? "scheduled",
-      notes: insertAppointment.notes ?? null
+      patientId: appointmentData.patientId,
+      doctorId: appointmentData.doctorId,
+      date: appointmentData.date,
+      time: appointmentData.time,
+      treatment: appointmentData.treatment,
+      status: appointmentData.status || "scheduled",
+      notes: appointmentData.notes || null,
     };
+    
     this.appointments.set(appointment.id, appointment);
     return appointment;
   }
@@ -582,17 +430,18 @@ export class MemStorage implements IStorage {
     ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
   
-  async createTreatment(insertTreatment: InsertTreatment): Promise<Treatment> {
-    const treatment: Treatment = {
+  async createTreatment(treatmentData: InsertTreatment): Promise<Treatment> {
+    const treatment = {
       id: this.treatmentId++,
-      patientId: insertTreatment.patientId,
-      doctorId: insertTreatment.doctorId,
-      date: insertTreatment.date,
-      treatmentType: insertTreatment.treatmentType,
-      notes: insertTreatment.notes ?? null,
-      tooth: insertTreatment.tooth ?? null,
-      cost: insertTreatment.cost
+      patientId: treatmentData.patientId,
+      doctorId: treatmentData.doctorId,
+      date: treatmentData.date,
+      treatmentType: treatmentData.treatmentType,
+      cost: treatmentData.cost,
+      notes: treatmentData.notes || null,
+      tooth: treatmentData.tooth || null,
     };
+    
     this.treatments.set(treatment.id, treatment);
     return treatment;
   }
@@ -617,17 +466,19 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async createDentalChartEntry(insertEntry: InsertDentalChart): Promise<DentalChart> {
-    const entry: DentalChart = {
+  async createDentalChartEntry(dentalChartData: InsertDentalChart): Promise<DentalChart> {
+    const now = new Date();
+    const dentalChart = {
       id: this.dentalChartId++,
-      patientId: insertEntry.patientId,
-      toothNumber: insertEntry.toothNumber,
-      status: insertEntry.status,
-      notes: insertEntry.notes ?? null,
-      updatedAt: new Date()
+      patientId: dentalChartData.patientId,
+      toothNumber: dentalChartData.toothNumber,
+      status: dentalChartData.status,
+      notes: dentalChartData.notes || null,
+      updatedAt: now,
     };
-    this.dentalCharts.set(entry.id, entry);
-    return entry;
+    
+    this.dentalCharts.set(dentalChart.id, dentalChart);
+    return dentalChart;
   }
   
   async updateDentalChartEntry(id: number, update: Partial<InsertDentalChart>): Promise<DentalChart | undefined> {
@@ -658,20 +509,21 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+  async createPayment(paymentData: InsertPayment): Promise<Payment> {
     const now = new Date();
-    const payment: Payment = {
+    const payment = {
       id: this.paymentId++,
-      patientId: insertPayment.patientId,
-      treatmentId: insertPayment.treatmentId ?? null,
-      amount: insertPayment.amount,
-      date: insertPayment.date,
-      method: insertPayment.method,
-      status: insertPayment.status,
-      notes: insertPayment.notes ?? null,
+      patientId: paymentData.patientId,
+      treatmentId: paymentData.treatmentId || null,
+      amount: paymentData.amount,
+      date: paymentData.date,
+      paymentMethod: paymentData.paymentMethod,
+      status: paymentData.status,
+      notes: paymentData.notes || null,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
+    
     this.payments.set(payment.id, payment);
     return payment;
   }
@@ -695,4 +547,3 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
->>>>>>> 0df61eb7dd1e3f7ad568f5f744321f39eb9e1e3d

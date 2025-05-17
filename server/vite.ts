@@ -25,7 +25,7 @@ export async function createViteServer(httpServer: Server) {
       hmr: {
         server: httpServer
       },
-      allowedHosts: ["localhost", "127.0.0.1"]
+      allowedHosts: true as const
     },
     appType: 'custom'
   });

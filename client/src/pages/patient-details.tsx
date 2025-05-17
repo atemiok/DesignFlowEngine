@@ -593,7 +593,7 @@ export default function PatientDetails() {
                                 <div>
                                   <p className="text-lg font-medium text-primary">{formatCurrency(payment.amount)}</p>
                                   <p className="text-sm text-neutral-500">
-                                    Method: {payment.method.charAt(0).toUpperCase() + payment.method.slice(1)}
+                                    Method: {payment.paymentMethod.charAt(0).toUpperCase() + payment.paymentMethod.slice(1)}
                                   </p>
                                 </div>
                                 <div className="flex space-x-2">

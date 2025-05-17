@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { insertPaymentSchema } from "@shared/schema";
+import { insertPaymentSchema, type Patient } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -27,17 +27,32 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Treatment } from "@shared/schema";
 
-// Replace the string amount with a number for the form
+// Define payment methods and status options as constants
+const PAYMENT_METHODS = ["mpesa", "cash", "insurance", "bank transfer", "credit card", "nhif", "corporate"] as const;
+const PAYMENT_STATUSES = ["pending", "completed", "failed", "refunded", "partially-paid"] as const;
+
+// Form schema that matches the database schema but handles string inputs
 const paymentFormSchema = z.object({
   patientId: z.string().min(1, "Patient is required"),
   treatmentId: z.string().optional(),
-  amount: z.string().min(1, "Amount is required").refine(
-    (val) => !isNaN(Number(val)) && Number(val) >= 0,
-    { message: "Amount must be a valid positive number" }
-  ),
-  date: z.string().min(8, "Date is required").regex(/^\d{2}\d{2}\d{4}$/, "Date must be in ddmmyyyy format"),
-  paymentMethod: z.enum(["mpesa", "cash", "insurance"], { message: "Payment method must be mpesa, cash, or insurance" }),
-  status: z.string().min(1, "Status is required"),
+  amount: z.string()
+    .min(1, "Amount is required")
+    .refine(
+      (val) => !isNaN(Number(val)) && Number(val) > 0,
+      { message: "Amount must be a valid positive number" }
+    ),
+  date: z.string()
+    .min(1, "Date is required")
+    .refine(
+      (val) => !isNaN(Date.parse(val)),
+      { message: "Invalid date format" }
+    ),
+  paymentMethod: z.enum(PAYMENT_METHODS, {
+    message: "Please select a valid payment method"
+  }),
+  status: z.enum(PAYMENT_STATUSES, {
+    message: "Please select a valid status"
+  }),
   notes: z.string().optional(),
 });
 
@@ -62,7 +77,7 @@ export default function PaymentForm({
   
 
   
-  const { data: patients } = useQuery({
+  const { data: patients } = useQuery<Patient[]>({
     queryKey: ['/api/patients'],
   });
   
@@ -81,7 +96,7 @@ export default function PaymentForm({
       treatmentId: "",
       amount: "",
       date: new Date().toISOString().split('T')[0],
-      method: "mpesa", // Default to M-Pesa as common in Kenya
+      paymentMethod: "mpesa",
       status: "completed",
       notes: "",
     },
@@ -176,24 +191,6 @@ export default function PaymentForm({
       createPaymentMutation.mutate(data);
     }
   };
-  
-  const paymentMethods = [
-    "mpesa",
-    "cash",
-    "insurance",
-    "bank transfer",
-    "credit card",
-    "nhif",
-    "corporate"
-  ];
-  
-  const statusOptions = [
-    "pending",
-    "completed",
-    "failed",
-    "refunded",
-    "partially-paid",
-  ];
   
   return (
     <Card>
@@ -297,18 +294,20 @@ export default function PaymentForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Payment Method</FormLabel>
-                    <FormControl>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Payment Method" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mpesa">Mpesa</SelectItem>
-                          <SelectItem value="cash">Cash</SelectItem>
-                          <SelectItem value="insurance">Insurance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
+                      </FormControl>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map((method) => (
+                          <SelectItem key={method} value={method}>
+                            {method.charAt(0).toUpperCase() + method.slice(1).replace('-', ' ')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -330,7 +329,7 @@ export default function PaymentForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {statusOptions.map((status) => (
+                        {PAYMENT_STATUSES.map((status) => (
                           <SelectItem key={status} value={status}>
                             {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
                           </SelectItem>

@@ -65,7 +65,7 @@ export default function Billing() {
     
     return (
       patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.paymentMethod.toLowerCase().includes(searchTerm.toLowerCase()) ||
       payment.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (payment.notes && payment.notes.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -79,7 +79,7 @@ export default function Billing() {
   
   // Group by payment method
   const paymentsByMethod = payments?.reduce((acc, payment) => {
-    const method = payment.method;
+    const method = payment.paymentMethod;
     if (!acc[method]) {
       acc[method] = 0;
     }
@@ -165,7 +165,7 @@ export default function Billing() {
             treatmentId: paymentToEdit.treatmentId ? paymentToEdit.treatmentId.toString() : undefined,
             amount: paymentToEdit.amount.toString(),
             date: paymentToEdit.date,
-            method: paymentToEdit.method,
+            paymentMethod: paymentToEdit.paymentMethod,
             status: paymentToEdit.status,
             notes: paymentToEdit.notes,
           }}
@@ -259,7 +259,7 @@ export default function Billing() {
                                   </div>
                                 </TableCell>
                                 <TableCell className="font-medium">{formatCurrency(payment.amount)}</TableCell>
-                                <TableCell className="capitalize">{payment.method}</TableCell>
+                                <TableCell className="capitalize">{payment.paymentMethod}</TableCell>
                                 <TableCell>{getStatusBadge(payment.status)}</TableCell>
                                 <TableCell className="text-right">
                                   <Link href={`/billing?id=${payment.id}&edit=true`}>

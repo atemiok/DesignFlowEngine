@@ -265,7 +265,11 @@ export class MemStorage implements IStorage {
   
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { ...insertUser, id };
+    const user: User = {
+      ...insertUser,
+      id,
+      role: insertUser.role || 'patient' // Provide default role
+    };
     this.users.set(id, user);
     return user;
   }
@@ -327,7 +331,14 @@ export class MemStorage implements IStorage {
   
   async createMedicalHistory(insertMedicalHistory: InsertMedicalHistory): Promise<MedicalHistory> {
     const id = this.medicalHistoryId++;
-    const medicalHistory: MedicalHistory = { ...insertMedicalHistory, id };
+    const medicalHistory: MedicalHistory = {
+      id,
+      patientId: insertMedicalHistory.patientId,
+      notes: insertMedicalHistory.notes ?? null,
+      allergies: insertMedicalHistory.allergies ?? null,
+      conditions: insertMedicalHistory.conditions ?? null,
+      medications: insertMedicalHistory.medications ?? null
+    };
     this.medicalHistories.set(id, medicalHistory);
     return medicalHistory;
   }
@@ -364,7 +375,16 @@ export class MemStorage implements IStorage {
   
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
     const id = this.appointmentId++;
-    const appointment: Appointment = { ...insertAppointment, id };
+    const appointment: Appointment = {
+      id,
+      patientId: insertAppointment.patientId,
+      doctorId: insertAppointment.doctorId,
+      date: insertAppointment.date,
+      time: insertAppointment.time,
+      treatment: insertAppointment.treatment,
+      status: insertAppointment.status || 'scheduled', // Provide default status
+      notes: insertAppointment.notes ?? null
+    };
     this.appointments.set(id, appointment);
     return appointment;
   }

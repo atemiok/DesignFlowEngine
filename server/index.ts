@@ -9,17 +9,24 @@ const app = express();
 
 // Configure CORS
 app.use(cors({
-  origin: [
-    'https://design-flow-engine-6ne1b0o1p-jsphbrs-6905s-projects.vercel.app',
-    'https://design-flow-engine-gdvugpe8n-jsphbrs-6905s-projects.vercel.app',
-    'https://design-flow-engine-gl3v6tpgh-jsphbrs-6905s-projects.vercel.app',
-    'https://design-flow-engine-9528lzdcp-jsphbrs-6905s-projects.vercel.app',
-    'https://design-flow-engine-blqyv610x-jsphbrs-6905s-projects.vercel.app',
-    'https://design-flow-engine-od6s48tvm-jsphbrs-6905s-projects.vercel.app',
-    'https://design-flow-engine-gmx46x4wt-jsphbrs-6905s-projects.vercel.app',
-    'https://design-flow-engine-3e1er5b7f-jsphbrs-6905s-projects.vercel.app',
-    'http://localhost:5173'
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Allow localhost for development
+    if (origin === 'http://localhost:5173') {
+      return callback(null, true);
+    }
+
+    // Allow any Vercel preview URL for this project
+    if (origin.includes('design-flow-engine') && origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

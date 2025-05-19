@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { api } from "./api";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -69,14 +70,14 @@ export const statusColors = {
 export async function initializeData() {
   try {
     // Get dashboard stats
-    await fetch('/api/dashboard/stats');
+    await api.getDashboardStats();
     
     // Get patients
-    await fetch('/api/patients');
+    await api.getPatients();
     
     // Get today's appointments
     const today = new Date().toISOString().split('T')[0];
-    await fetch(`/api/appointments?date=${today}`);
+    await api.getAppointments(today);
   } catch (error) {
     console.error('Failed to initialize data:', error);
   }

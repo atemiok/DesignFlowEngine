@@ -31,54 +31,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = req.body;
       
       if (!username || !password) {
+        console.log('Login attempt with missing credentials:', { username: !!username, password: !!password });
         return res.status(400).json({ message: 'Username and password are required' });
       }
       
+      console.log('Attempting login for username:', username);
       const user = await storage.getUserByUsername(username);
       
       if (!user) {
+        console.log('Login failed: User not found for username:', username);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
 
+      console.log('User found, comparing passwords');
       const isValidPassword = await bcrypt.compare(password, user.password);
       
       if (!isValidPassword) {
+        console.log('Login failed: Invalid password for username:', username);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
       
+      console.log('Login successful for username:', username);
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
       console.error('Login error:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
   app.post('/api/auth/register', async (req, res) => {
     try {
+      console.log('Registration attempt with data:', { ...req.body, password: '[REDACTED]' });
       const userData = insertUserSchema.parse(req.body);
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
+        console.log('Registration failed: Username already exists:', userData.username);
         return res.status(400).json({ message: 'Username already exists' });
       }
 
+      console.log('Hashing password for new user:', userData.username);
       // Hash password
       const hashedPassword = await bcrypt.hash(userData.password, 10);
       
+      console.log('Creating new user:', userData.username);
       // Create user with hashed password
       const user = await storage.createUser({
         ...userData,
         password: hashedPassword
       });
 
+      console.log('Registration successful for username:', userData.username);
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
-      handleZodError(error, res);
+      console.error('Registration error:', error);
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        console.log('Validation error details:', validationError.message);
+        return res.status(400).json({ message: validationError.message });
+      }
+      res.status(500).json({ message: 'Internal server error', error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -476,41 +493,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // DASHBOARD STATS ROUTE
+  // DASHBOARD ROUTES
   app.get('/api/dashboard/stats', async (_req, res) => {
     try {
-      const patients = await storage.getPatients();
-      const appointments = await storage.getAppointments();
-      const treatments = await storage.getTreatments();
-      const payments = await storage.getPayments();
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      const todayAppointments = appointments.filter(a => a.date === today).length;
-      const newPatients = patients.filter(p => {
-        const createdDate = new Date(p.createdAt);
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        return createdDate >= sevenDaysAgo;
-      }).length;
-      
-      // Calculate pending payments
-      const pendingPayments = payments
-        .filter(p => p.status === 'pending')
-        .reduce((sum, payment) => sum + Number(payment.amount), 0);
-      
-      // Calculate treatments completed
-      const treatmentsCompleted = treatments.length;
-      
-      res.json({
-        todayAppointments,
-        newPatients,
-        pendingPayments,
-        treatmentsCompleted,
+      const [patients, appointments, treatments] = await Promise.all([
+        storage.getPatients(),
+        storage.getAppointments(),
+        storage.getTreatments()
+      ]);
+
+      const stats = {
         totalPatients: patients.length,
-        monthlyAppointments: appointments.length,
-        treatmentCompletion: '92%'
-      });
+        totalAppointments: appointments.length,
+        totalTreatments: treatments.length,
+        recentPatients: patients.slice(-5),
+        upcomingAppointments: appointments
+          .filter(a => new Date(a.date) > new Date())
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(0, 5)
+      };
+
+      res.json(stats);
     } catch (error) {
       console.error('Error getting dashboard stats:', error);
       res.status(500).json({ message: 'Internal server error' });

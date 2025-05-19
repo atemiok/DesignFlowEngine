@@ -7,7 +7,8 @@ import {
   dentalChart, type DentalChart, type InsertDentalChart,
   payments, type Payment, type InsertPayment
 } from "@shared/schema";
-import bcryptjs from 'bcryptjs';
+import { db } from "./db";
+import { eq, like, and } from "drizzle-orm";
 
 // Storage interface
 export interface IStorage {
@@ -61,489 +62,198 @@ export interface IStorage {
   deletePayment(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private patients: Map<number, Patient>;
-  private medicalHistories: Map<number, MedicalHistory>;
-  private appointments: Map<number, Appointment>;
-  private treatments: Map<number, Treatment>;
-  private dentalCharts: Map<number, DentalChart>;
-  private payments: Map<number, Payment>;
-  
-  private userId: number;
-  private patientId: number;
-  private medicalHistoryId: number;
-  private appointmentId: number;
-  private treatmentId: number;
-  private dentalChartId: number;
-  private paymentId: number;
-  
-  constructor() {
-    this.users = new Map();
-    this.patients = new Map();
-    this.medicalHistories = new Map();
-    this.appointments = new Map();
-    this.treatments = new Map();
-    this.dentalCharts = new Map();
-    this.payments = new Map();
-    
-    this.userId = 1;
-    this.patientId = 1;
-    this.medicalHistoryId = 1;
-    this.appointmentId = 1;
-    this.treatmentId = 1;
-    this.dentalChartId = 1;
-    this.paymentId = 1;
-    
-    // Add initial doctor user with hashed password
-    this.createUser({
-      username: 'doctor',
-      password: '$2a$10$X7UrH5YxX5YxX5YxX5YxX.5YxX5YxX5YxX5YxX5YxX5YxX5YxX5YxX', // hashed 'password'
-      name: 'Dr. Roberts',
-      email: 'dr.roberts@dentalcare.com',
-      phone: '+254712345678',
-      role: 'doctor'
-    });
-    
-    // Add initial data for demonstration
-    this.initializeData().catch(console.error);
-  }
-  
-  private async initializeData() {
-    // Create sample patients
-    const patient1 = await this.createPatient({
-      name: 'Jane Doe',
-      idNumber: '12345678',
-      gender: 'Female',
-      dob: '05/12/1985',
-      phone: '+254712345678',
-      email: 'jane.doe@example.com',
-      address: '123 Main St, Anytown',
-      insurance: 'DentalCare Plus',
-      service: 'checkup'
-    });
-    
-    const patient2 = await this.createPatient({
-      name: 'Mike Smith',
-      idNumber: '87654321',
-      gender: 'Male',
-      dob: '10/24/1978',
-      phone: '+254798765432',
-      email: 'mike.smith@example.com',
-      address: '456 Oak Ave, Somecity',
-      insurance: 'Dental Shield',
-      service: 'cleaning'
-    });
-    
-    const patient3 = await this.createPatient({
-      name: 'Alice Johnson',
-      idNumber: '24681357',
-      gender: 'Female',
-      dob: '03/15/1990',
-      phone: '+254755555555',
-      email: 'alice.johnson@example.com',
-      address: '789 Pine Rd, Othertown',
-      insurance: 'DentiHealth',
-      service: 'whitening'
-    });
-    
-    // Create medical histories
-    await this.createMedicalHistory({
-      patientId: patient1.id,
-      allergies: 'Penicillin',
-      conditions: 'Hypertension',
-      medications: 'Lisinopril',
-      notes: 'Patient has controlled hypertension.'
-    });
-    
-    // Create appointments
-    const today = new Date().toISOString().split('T')[0];
-    
-    await this.createAppointment({
-      patientId: patient1.id,
-      doctorId: 1, // Dr. Roberts
-      date: today,
-      time: '09:00 AM',
-      treatment: 'Dental Cleaning',
-      status: 'checked-in',
-      notes: 'Regular cleaning appointment'
-    });
-    
-    await this.createAppointment({
-      patientId: patient2.id,
-      doctorId: 1,
-      date: today,
-      time: '10:30 AM',
-      treatment: 'Root Canal',
-      status: 'waiting',
-      notes: 'Patient experiencing pain'
-    });
-    
-    await this.createAppointment({
-      patientId: patient3.id,
-      doctorId: 1,
-      date: today,
-      time: '11:45 AM',
-      treatment: 'Consultation',
-      status: 'scheduled',
-      notes: 'Initial consultation'
-    });
-    
-    // Create treatments
-    await this.createTreatment({
-      patientId: patient1.id,
-      doctorId: 1,
-      date: '2023-03-15',
-      treatmentType: 'Dental Cleaning',
-      notes: 'Routine cleaning and fluoride treatment.',
-      cost: '120',
-      tooth: null
-    });
-    
-    await this.createTreatment({
-      patientId: patient2.id,
-      doctorId: 1,
-      date: '2023-01-22',
-      treatmentType: 'Cavity Filling',
-      tooth: '18',
-      notes: 'Composite filling on tooth #18.',
-      cost: '200'
-    });
-    
-    // Create dental chart entries
-    await this.createDentalChartEntry({
-      patientId: patient1.id,
-      toothNumber: '1',
-      status: 'needs-treatment',
-      notes: 'Wisdom tooth extraction recommended.'
-    });
-    
-    await this.createDentalChartEntry({
-      patientId: patient1.id,
-      toothNumber: '14',
-      status: 'treatment-scheduled',
-      notes: 'Root canal treatment scheduled for Apr 10.'
-    });
-    
-    await this.createDentalChartEntry({
-      patientId: patient1.id,
-      toothNumber: '18',
-      status: 'treated',
-      notes: 'Composite filling completed Jan 22.'
-    });
-    
-    // Create payments
-    await this.createPayment({
-      patientId: patient1.id,
-      treatmentId: 1,
-      amount: '120',
-      date: '2023-03-15',
-      paymentMethod: 'credit',
-      status: 'completed',
-      notes: 'Payment for dental cleaning'
-    });
-    
-    await this.createPayment({
-      patientId: patient2.id,
-      treatmentId: 2,
-      amount: '200',
-      date: '2023-01-22',
-      paymentMethod: 'insurance',
-      status: 'completed',
-      notes: 'Payment for cavity filling'
-    });
-  }
-  
+export class DbStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
   }
-  
+
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username
-    );
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
   }
-  
+
   async createUser(userData: InsertUser): Promise<User> {
-    const { password, ...userWithoutPassword } = userData;
-    const hashedPassword = await bcryptjs.hash(password, 10);
-    
-    const user: User = {
-      id: this.userId++,
-      ...userWithoutPassword,
-      password: hashedPassword,
-      role: userData.role || "staff", // Ensure role is always defined
-    };
-    
-    this.users.set(user.id, user);
-    return user;
+    const result = await db.insert(users).values(userData).returning();
+    return result[0];
   }
-  
+
   // Patient methods
   async getPatients(): Promise<Patient[]> {
-    return Array.from(this.patients.values());
+    return db.select().from(patients);
   }
-  
+
   async getPatient(id: number): Promise<Patient | undefined> {
-    return this.patients.get(id);
+    const result = await db.select().from(patients).where(eq(patients.id, id));
+    return result[0];
   }
-  
+
   async getPatientByPatientId(patientId: string): Promise<Patient | undefined> {
-    return Array.from(this.patients.values()).find(
-      (patient) => patient.idNumber === patientId
-    );
+    const result = await db.select().from(patients).where(eq(patients.patientId, patientId));
+    return result[0];
   }
-  
-  async createPatient(insertPatient: InsertPatient): Promise<Patient> {
-    const now = new Date();
-    const patient: Patient = {
-      ...insertPatient,
-      id: this.patientId++,
-      phone: String(insertPatient.phone),
-      idNumber: String(insertPatient.idNumber),
-      insurance: insertPatient.insurance ?? null,
-      patientId: (insertPatient as any).patientId ?? String(this.patientId),
-      updatedAt: now,
-      createdAt: now,
-    };
-    this.patients.set(patient.id, patient);
-    return patient;
+
+  async createPatient(patientData: InsertPatient): Promise<Patient> {
+    const result = await db.insert(patients).values(patientData).returning();
+    return result[0];
   }
-  
-  async updatePatient(id: number, patientUpdate: Partial<InsertPatient>): Promise<Patient | undefined> {
-    const patient = this.patients.get(id);
-    if (!patient) return undefined;
-    
-    const updatedPatient = { ...patient, ...patientUpdate };
-    this.patients.set(id, updatedPatient);
-    return updatedPatient;
+
+  async updatePatient(id: number, patientData: Partial<InsertPatient>): Promise<Patient | undefined> {
+    const result = await db.update(patients)
+      .set(patientData)
+      .where(eq(patients.id, id))
+      .returning();
+    return result[0];
   }
-  
+
   async deletePatient(id: number): Promise<boolean> {
-    return this.patients.delete(id);
+    const result = await db.delete(patients).where(eq(patients.id, id)).returning();
+    return result.length > 0;
   }
-  
+
   async searchPatients(query: string): Promise<Patient[]> {
-    const lowercaseQuery = query.toLowerCase();
-    return Array.from(this.patients.values()).filter(
-      (patient) => 
-        patient.name.toLowerCase().includes(lowercaseQuery) ||
-        patient.idNumber.toLowerCase().includes(lowercaseQuery) ||
-        patient.phone.includes(query) ||
-        patient.email.toLowerCase().includes(lowercaseQuery)
+    return db.select().from(patients).where(
+      like(patients.name, `%${query}%`)
     );
   }
-  
+
   // Medical History methods
   async getMedicalHistory(patientId: number): Promise<MedicalHistory | undefined> {
-    return Array.from(this.medicalHistories.values()).find(
-      (history) => history.patientId === patientId
-    );
+    const result = await db.select().from(medicalHistory).where(eq(medicalHistory.patientId, patientId));
+    return result[0];
   }
-  
+
   async createMedicalHistory(medicalHistoryData: InsertMedicalHistory): Promise<MedicalHistory> {
-    const medicalHistory = {
-      id: this.medicalHistoryId++,
-      patientId: medicalHistoryData.patientId,
-      allergies: medicalHistoryData.allergies || null,
-      conditions: medicalHistoryData.conditions || null,
-      medications: medicalHistoryData.medications || null,
-      notes: medicalHistoryData.notes || null,
-    };
-    
-    this.medicalHistories.set(medicalHistory.id, medicalHistory);
-    return medicalHistory;
+    const result = await db.insert(medicalHistory).values(medicalHistoryData).returning();
+    return result[0];
   }
-  
-  async updateMedicalHistory(id: number, update: Partial<InsertMedicalHistory>): Promise<MedicalHistory | undefined> {
-    const medicalHistory = this.medicalHistories.get(id);
-    if (!medicalHistory) return undefined;
-    
-    const updatedMedicalHistory = { ...medicalHistory, ...update };
-    this.medicalHistories.set(id, updatedMedicalHistory);
-    return updatedMedicalHistory;
+
+  async updateMedicalHistory(id: number, medicalHistoryData: Partial<InsertMedicalHistory>): Promise<MedicalHistory | undefined> {
+    const result = await db.update(medicalHistory)
+      .set(medicalHistoryData)
+      .where(eq(medicalHistory.id, id))
+      .returning();
+    return result[0];
   }
-  
+
   // Appointment methods
   async getAppointments(): Promise<Appointment[]> {
-    return Array.from(this.appointments.values());
+    return db.select().from(appointments);
   }
-  
+
   async getAppointment(id: number): Promise<Appointment | undefined> {
-    return this.appointments.get(id);
+    const result = await db.select().from(appointments).where(eq(appointments.id, id));
+    return result[0];
   }
-  
+
   async getAppointmentsByPatient(patientId: number): Promise<Appointment[]> {
-    return Array.from(this.appointments.values()).filter(
-      (appointment) => appointment.patientId === patientId
-    );
+    return db.select().from(appointments).where(eq(appointments.patientId, patientId));
   }
-  
+
   async getAppointmentsByDate(date: string): Promise<Appointment[]> {
-    return Array.from(this.appointments.values()).filter(
-      (appointment) => appointment.date === date
-    );
+    return db.select().from(appointments).where(eq(appointments.date, date));
   }
-  
+
   async createAppointment(appointmentData: InsertAppointment): Promise<Appointment> {
-    const appointment = {
-      id: this.appointmentId++,
-      patientId: appointmentData.patientId,
-      doctorId: appointmentData.doctorId,
-      date: appointmentData.date,
-      time: appointmentData.time,
-      treatment: appointmentData.treatment,
-      status: appointmentData.status || "scheduled",
-      notes: appointmentData.notes || null,
-    };
-    
-    this.appointments.set(appointment.id, appointment);
-    return appointment;
+    const result = await db.insert(appointments).values(appointmentData).returning();
+    return result[0];
   }
-  
-  async updateAppointment(id: number, update: Partial<InsertAppointment>): Promise<Appointment | undefined> {
-    const appointment = this.appointments.get(id);
-    if (!appointment) return undefined;
-    
-    const updatedAppointment = { ...appointment, ...update };
-    this.appointments.set(id, updatedAppointment);
-    return updatedAppointment;
+
+  async updateAppointment(id: number, appointmentData: Partial<InsertAppointment>): Promise<Appointment | undefined> {
+    const result = await db.update(appointments)
+      .set(appointmentData)
+      .where(eq(appointments.id, id))
+      .returning();
+    return result[0];
   }
-  
+
   async deleteAppointment(id: number): Promise<boolean> {
-    return this.appointments.delete(id);
+    const result = await db.delete(appointments).where(eq(appointments.id, id)).returning();
+    return result.length > 0;
   }
-  
+
   // Treatment methods
   async getTreatments(): Promise<Treatment[]> {
-    return Array.from(this.treatments.values());
+    return db.select().from(treatments);
   }
-  
+
   async getTreatment(id: number): Promise<Treatment | undefined> {
-    return this.treatments.get(id);
+    const result = await db.select().from(treatments).where(eq(treatments.id, id));
+    return result[0];
   }
-  
+
   async getTreatmentsByPatient(patientId: number): Promise<Treatment[]> {
-    return Array.from(this.treatments.values()).filter(
-      (treatment) => treatment.patientId === patientId
-    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return db.select().from(treatments).where(eq(treatments.patientId, patientId));
   }
-  
+
   async createTreatment(treatmentData: InsertTreatment): Promise<Treatment> {
-    const treatment = {
-      id: this.treatmentId++,
-      patientId: treatmentData.patientId,
-      doctorId: treatmentData.doctorId,
-      date: treatmentData.date,
-      treatmentType: treatmentData.treatmentType,
-      cost: treatmentData.cost,
-      notes: treatmentData.notes || null,
-      tooth: treatmentData.tooth || null,
-    };
-    
-    this.treatments.set(treatment.id, treatment);
-    return treatment;
+    const result = await db.insert(treatments).values(treatmentData).returning();
+    return result[0];
   }
-  
-  async updateTreatment(id: number, update: Partial<InsertTreatment>): Promise<Treatment | undefined> {
-    const treatment = this.treatments.get(id);
-    if (!treatment) return undefined;
-    
-    const updatedTreatment = { ...treatment, ...update };
-    this.treatments.set(id, updatedTreatment);
-    return updatedTreatment;
+
+  async updateTreatment(id: number, treatmentData: Partial<InsertTreatment>): Promise<Treatment | undefined> {
+    const result = await db.update(treatments)
+      .set(treatmentData)
+      .where(eq(treatments.id, id))
+      .returning();
+    return result[0];
   }
-  
+
   async deleteTreatment(id: number): Promise<boolean> {
-    return this.treatments.delete(id);
+    const result = await db.delete(treatments).where(eq(treatments.id, id)).returning();
+    return result.length > 0;
   }
-  
+
   // Dental Chart methods
   async getDentalChart(patientId: number): Promise<DentalChart[]> {
-    return Array.from(this.dentalCharts.values()).filter(
-      (entry) => entry.patientId === patientId
-    );
+    return db.select().from(dentalChart).where(eq(dentalChart.patientId, patientId));
   }
-  
-  async createDentalChartEntry(dentalChartData: InsertDentalChart): Promise<DentalChart> {
-    const now = new Date();
-    const dentalChart = {
-      id: this.dentalChartId++,
-      patientId: dentalChartData.patientId,
-      toothNumber: dentalChartData.toothNumber,
-      status: dentalChartData.status,
-      notes: dentalChartData.notes || null,
-      updatedAt: now,
-    };
-    
-    this.dentalCharts.set(dentalChart.id, dentalChart);
-    return dentalChart;
+
+  async createDentalChartEntry(entryData: InsertDentalChart): Promise<DentalChart> {
+    const result = await db.insert(dentalChart).values(entryData).returning();
+    return result[0];
   }
-  
-  async updateDentalChartEntry(id: number, update: Partial<InsertDentalChart>): Promise<DentalChart | undefined> {
-    const entry = this.dentalCharts.get(id);
-    if (!entry) return undefined;
-    
-    const updatedEntry: DentalChart = {
-      ...entry,
-      ...update,
-      updatedAt: new Date()
-    };
-    this.dentalCharts.set(id, updatedEntry);
-    return updatedEntry;
+
+  async updateDentalChartEntry(id: number, entryData: Partial<InsertDentalChart>): Promise<DentalChart | undefined> {
+    const result = await db.update(dentalChart)
+      .set(entryData)
+      .where(eq(dentalChart.id, id))
+      .returning();
+    return result[0];
   }
-  
+
   // Payment methods
   async getPayments(): Promise<Payment[]> {
-    return Array.from(this.payments.values());
+    return db.select().from(payments);
   }
-  
+
   async getPayment(id: number): Promise<Payment | undefined> {
-    return this.payments.get(id);
+    const result = await db.select().from(payments).where(eq(payments.id, id));
+    return result[0];
   }
-  
+
   async getPaymentsByPatient(patientId: number): Promise<Payment[]> {
-    return Array.from(this.payments.values()).filter(
-      (payment) => payment.patientId === patientId
-    );
+    return db.select().from(payments).where(eq(payments.patientId, patientId));
   }
-  
+
   async createPayment(paymentData: InsertPayment): Promise<Payment> {
-    const now = new Date();
-    const payment = {
-      id: this.paymentId++,
-      patientId: paymentData.patientId,
-      treatmentId: paymentData.treatmentId || null,
-      amount: paymentData.amount,
-      date: paymentData.date,
-      paymentMethod: paymentData.paymentMethod,
-      status: paymentData.status,
-      notes: paymentData.notes || null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    this.payments.set(payment.id, payment);
-    return payment;
+    const result = await db.insert(payments).values(paymentData).returning();
+    return result[0];
   }
-  
-  async updatePayment(id: number, update: Partial<InsertPayment>): Promise<Payment | undefined> {
-    const payment = this.payments.get(id);
-    if (!payment) return undefined;
-    
-    const updatedPayment: Payment = {
-      ...payment,
-      ...update,
-      updatedAt: new Date()
-    };
-    this.payments.set(id, updatedPayment);
-    return updatedPayment;
+
+  async updatePayment(id: number, paymentData: Partial<InsertPayment>): Promise<Payment | undefined> {
+    const result = await db.update(payments)
+      .set(paymentData)
+      .where(eq(payments.id, id))
+      .returning();
+    return result[0];
   }
-  
+
   async deletePayment(id: number): Promise<boolean> {
-    return this.payments.delete(id);
+    const result = await db.delete(payments).where(eq(payments.id, id)).returning();
+    return result.length > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DbStorage();

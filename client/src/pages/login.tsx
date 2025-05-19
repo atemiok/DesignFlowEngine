@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -22,25 +23,15 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.message || "Login failed");
-        return;
-      }
-      const user = await res.json();
+      const user = await api.login(username, password);
       localStorage.setItem("user", JSON.stringify(user));
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.name}`,
       });
       navigate("/");
-    } catch (err) {
-      setError("Network error");
+    } catch (err: any) {
+      setError(err.data?.message || "Login failed");
     }
   };
 
@@ -48,25 +39,15 @@ const LoginPage = () => {
     e.preventDefault();
     setError("");
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, name, email, phone, role }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.message || "Registration failed");
-        return;
-      }
-      const user = await res.json();
+      const user = await api.register({ username, password, name, email, phone, role });
       localStorage.setItem("user", JSON.stringify(user));
       toast({
         title: "Welcome!",
         description: "Your account has been created successfully.",
       });
       navigate("/");
-    } catch (err) {
-      setError("Network error");
+    } catch (err: any) {
+      setError(err.data?.message || "Registration failed");
     }
   };
 

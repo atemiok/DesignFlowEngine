@@ -1,5 +1,5 @@
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://design-flow-engine-gl3v6tpgh-jsphbrs-6905s-projects.vercel.app'
+  ? window.location.origin
   : '';
 
 interface ApiError extends Error {

@@ -10,6 +10,7 @@ const app = express();
 // Configure CORS
 app.use(cors({
   origin: [
+    'https://design-flow-engine-6ne1b0o1p-jsphbrs-6905s-projects.vercel.app',
     'https://design-flow-engine-gdvugpe8n-jsphbrs-6905s-projects.vercel.app',
     'https://design-flow-engine-gl3v6tpgh-jsphbrs-6905s-projects.vercel.app',
     'https://design-flow-engine-9528lzdcp-jsphbrs-6905s-projects.vercel.app',
